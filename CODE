@@ -1,0 +1,88 @@
+#include <string.h>
+
+const int ledPin = 9;
+const int buzzerPin = 8;
+const int buttonPin = 7;
+
+const int dotDuration = 200;
+
+String inputMessage = "";
+
+const char* morseTable[] = {
+  ".-","-...","-.-.","-..",".","..-.","--.","....","..",".---",
+  "-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-",
+  "..-","...-",".--","-..-","-.--","--..",
+  "-----",".----","..---","...--","....-",
+  ".....","-....","--...","---..","----."
+};
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  Serial.begin(9600);
+  Serial.println("Enter message in Serial Monitor:");
+}
+
+void loop() {
+
+  // Read Serial Input
+  if (Serial.available()) {
+    inputMessage = Serial.readStringUntil('\n');
+    inputMessage.trim();
+    Serial.println("Press button to transmit...");
+  }
+
+  // If button pressed
+  if (digitalRead(buttonPin) == LOW && inputMessage.length() > 0) {
+    delay(200); // debounce
+    sendMessage(inputMessage);
+    Serial.println("Transmission Complete");
+    delay(dotDuration * 10);
+  }
+}
+
+void sendMessage(String msg) {
+
+  for (int i = 0; i < msg.length(); i++) {
+
+    if (msg[i] == ' ') {
+      delay(dotDuration * 7);
+      continue;
+    }
+
+    int index;
+
+    if (msg[i] >= 'A' && msg[i] <= 'Z')
+      index = msg[i] - 'A';
+    else if (msg[i] >= 'a' && msg[i] <= 'z')
+      index = msg[i] - 'a';
+    else if (msg[i] >= '0' && msg[i] <= '9')
+      index = msg[i] - '0' + 26;
+    else
+      continue;
+
+    sendMorse(morseTable[index]);
+    delay(dotDuration * 3);
+  }
+}
+
+void sendMorse(const char* code) {
+
+  for (int i = 0; i < strlen(code); i++) {
+
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzerPin, HIGH);
+
+    if (code[i] == '.')
+      delay(dotDuration);
+    else
+      delay(dotDuration * 3);
+
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+
+    delay(dotDuration);
+  }
+}
